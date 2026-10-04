@@ -1,0 +1,294 @@
+/* ==========================================================================
+   DevTrack design tokens - black, white, lime
+
+   Three colours and nothing else: a true black ground, white type, and
+   Lime 400 (#A3E635) as the single accent. Everything that would normally be
+   carried by hue is carried by lightness instead - priority reads as weight,
+   workflow categories read as grey / white / lime.
+
+   Dark only, and deliberately so. Lime on white measures 1.5:1; there is no
+   light variant of this palette that keeps the accent legible, so rather than
+   ship a broken one the app commits to the black.
+
+   The one exception is red. An error that differs from a success only by its
+   wording is too easy to miss, so destructive actions and overdue work get
+   #FF4D4D - used nowhere else, never as decoration.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* --- Lime ramp, derived in OKLCh from #A3E635 so every step shares its
+         hue rather than being guessed --------------------------------------- */
+  --lime-50: #effce2;
+  --lime-100: #e0f8c6;
+  --lime-200: #c9f19a;
+  --lime-300: #b5ed6b;
+  --lime-400: #a3e635;  /* the accent */
+  --lime-500: #8ccd00;
+  --lime-600: #75b000;
+  --lime-700: #5f9200;
+  --lime-800: #4d7800;
+  --lime-900: #3d5e00;
+
+  --accent: var(--lime-400);
+  --accent-hover: var(--lime-300);
+  --accent-press: var(--lime-200);
+  --accent-soft: #131a06;
+  --accent-soft-strong: #1e2a09;
+  --accent-border: #33470e;
+  --accent-text: var(--lime-400);
+
+  /* Black ink on lime, at 13.93:1. White would be 1.51:1 - lime is a light
+     colour, and a lime button with white text is unreadable. */
+  --on-accent: #000000;
+  --accent-solid: var(--lime-400);
+  --accent-solid-hover: var(--lime-300);
+
+  /* --- Surfaces: a true black ground, panels lifted only by a step or two -- */
+  --bg: #000000;
+  --bg-sunken: #000000;
+  --surface: #0d0d0d;
+  --surface-raised: #141414;
+  --surface-alt: #080808;
+  --surface-hover: #1a1a1a;
+
+  /* --- Sidebar: liquid mercury, in black ---------------------------------
+     The panel keeps its moving metal. Bands stay between #000 and #262626 so
+     white nav labels never drop below 15:1 as the surface drifts, and the
+     specular sheen is lime rather than white so the accent lives in the metal. */
+  --sidebar-bg: #050505;
+  --sidebar-text: #b0b0b0;
+  --sidebar-text-strong: #ffffff;
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-active: rgba(255, 255, 255, 0.12);
+  --sidebar-line: rgba(255, 255, 255, 0.10);
+  --sidebar-chip: rgba(255, 255, 255, 0.07);
+
+  --merc-hi: #262626;
+  --merc-mid: #121212;
+  --merc-lo: #000000;
+  --merc-sheen: rgba(163, 230, 53, 0.20);
+  --merc-blur: 16px;
+
+  --metal-face: linear-gradient(
+    145deg,
+    #3d3d3d 0%,
+    #121212 26%,
+    #4a4a4a 42%,
+    #0a0a0a 60%,
+    #363636 76%,
+    #171717 100%
+  );
+  --metal-ink: #ffffff;
+
+  /* --- Lines ------------------------------------------------------------- */
+  --border: #1f1f1f;
+  --border-strong: #303030;
+  --border-input: #303030;
+
+  /* --- Text: white, then two greys ---------------------------------------- */
+  --text: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-muted: #8a8a8a;
+  --text-inverse: #000000;
+
+  /* --- Signal. Lime carries success; red is the single alarm. Warning is the
+         same red held at low emphasis, so the palette stays at three colours
+         plus one exception. ------------------------------------------------ */
+  --success: var(--lime-400);
+  --success-soft: #131a06;
+  --success-border: #33470e;
+  --warning: #ff4d4d;
+  --warning-soft: #1c0808;
+  --warning-border: #501717;
+  --danger: #ff4d4d;
+  --danger-soft: #1c0808;
+  --danger-border: #501717;
+  --info: #ffffff;
+  --info-soft: #141414;
+  --info-border: #303030;
+
+  /* --- Priority reads as weight, not hue. Only "highest" is allowed to
+         shout, and it borrows the alarm colour to do it. ------------------- */
+  --priority-highest: #ff4d4d;
+  --priority-high: #ffffff;
+  --priority-medium: #b0b0b0;
+  --priority-low: #8a8a8a;
+  --priority-lowest: #5a5a5a;
+
+  /* --- Issue type marks: three greys, the accent, and the alarm ------------ */
+  --type-epic: #a3e635;
+  --type-story: #ffffff;
+  --type-task: #8a8a8a;
+  --type-bug: #ff4d4d;
+  --type-subtask: #4a4a4a;
+
+  /* --- Workflow categories, separated by lightness ------------------------ */
+  --cat-todo: #6e6e6e;
+  --cat-todo-soft: #121212;
+  --cat-progress: #ffffff;
+  --cat-progress-soft: #1a1a1a;
+  --cat-done: var(--lime-400);
+  --cat-done-soft: #131a06;
+
+  /* --- Chart series --------------------------------------------------------
+     Lime and white. There is no hue difference to rely on, so separation is by
+     lightness and every chart carries a legend plus direct value labels - the
+     secondary encoding a mono palette requires. Lime is always series one. */
+  --chart-1: #a3e635;
+  --chart-2: #ffffff;
+  --chart-grid: #1f1f1f;
+  --chart-ink: #8a8a8a;
+
+  /* --- Shape and depth ----------------------------------------------------- */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.8);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 5px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.95), 0 4px 10px rgba(0, 0, 0, 0.8);
+  --shadow-accent: 0 3px 16px rgba(163, 230, 53, 0.26);
+
+  /* --- Spacing rhythm ------------------------------------------------------ */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* --- Type ---------------------------------------------------------------
+     IBM Plex, drawn as one system by Bold Monday: the mono is a true sibling
+     of the sans, so an issue key sits beside a title without looking pasted
+     in from another typeface. */
+  --font-display: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Cascadia Mono', Consolas, monospace;
+
+  --text-xs: 11.5px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15.5px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 34px;
+
+  --sidebar-width: 232px;
+  --topbar-height: 60px;
+  --detail-width: 460px;
+}
+
+/* ==========================================================================
+   Reset
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.55;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+a {
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+::selection {
+  background: var(--lime-400);
+  color: #000000;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--radius-pill);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+  background-clip: content-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

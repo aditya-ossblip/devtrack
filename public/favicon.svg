@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48"
+     role="img" aria-label="DevTrack">
+  <title>DevTrack</title>
+  <!-- A second drawing, not a scaled copy: at 16px the line mark's three
+       strokes close up against each other. On a solid tile they stay apart. -->
+  <rect width="48" height="48" rx="11" fill="#A3E635"/>
+  <path d="M11 10 L25 14.5" fill="none" stroke="#000000" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M11 20 L31 26.5" fill="none" stroke="#000000" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M11 30 L37 38.5" fill="none" stroke="#000000" stroke-width="5.5" stroke-linecap="round"/>
+</svg>

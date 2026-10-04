@@ -1,0 +1,127 @@
+/* The sign-in panel's animated mark.
+ *
+ * Kept out of app.css deliberately: this is one self-contained piece of the
+ * login screen, and nothing else in the app has any use for these rules.
+ * Every class is prefixed `al-` so it can never collide with the shared sheet.
+ *
+ * Sizes that have to stay true to the logo's proportions (the stroke lengths,
+ * their thickness, the spacing between them) are set from JavaScript, because
+ * they are all derived from one scale that follows the panel's width. The
+ * rules here own everything else.
+ */
+
+.al-root {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 clamp(36px, 6vw, 96px);
+  pointer-events: none;
+
+  /* The logo's 0.32 slope, as an angle: atan(0.32) = 17.74 degrees. */
+  --al-angle: 17.74deg;
+  --al-ease: cubic-bezier(.32, .72, .24, 1);
+
+  /* Overwritten on mount and on every resize. The fallbacks only matter for
+     the single frame before the first measurement. */
+  --al-stage-h: 190px;
+  --al-bar-h: 14px;
+}
+
+/* The drifting field stays exactly as it was — texture behind the subject.
+   Deleting the <VelocityField /> line in AuthShell removes it entirely. */
+.auth-art .auth-art-canvas { opacity: .32; }
+
+.al-stage {
+  position: relative;
+  height: var(--al-stage-h);
+  margin-bottom: clamp(34px, 4vw, 56px);
+}
+
+/* ONE set of three bars. In the mark they are strokes at the logo's angle;
+   in the stack they are level rows. Nothing is swapped out or crossfaded —
+   the same three elements change shape, which is what makes the loop read as
+   a single object rather than two animations taking turns. */
+.al-bar {
+  position: absolute;
+  left: 0;
+  top: 24px;
+  width: 0;
+  height: var(--al-bar-h);
+  border-radius: calc(var(--al-bar-h) / 2);
+  transform-origin: 0 50%;
+  transition: width .62s var(--al-ease), transform .88s var(--al-ease);
+}
+.al-bar:nth-child(1) { background: #fff; }
+.al-bar:nth-child(2) { background: #fff; }
+.al-bar:nth-child(3) { background: var(--lime-400, #A3E635); }
+
+/* The places a file goes when there is no one place for it. */
+.al-chip {
+  position: absolute;
+  left: 0;
+  top: 24px;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, .26);
+  border-radius: 99px;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
+  font-size: 13px;
+  letter-spacing: .04em;
+  color: rgba(255, 255, 255, .74);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(44px, 0) scale(.7);
+  transition: transform .8s var(--al-ease), opacity .45s ease;
+}
+.al-chip.is-out {
+  opacity: 1;
+  transform: translate(var(--al-x), var(--al-y)) scale(1);
+}
+.al-chip.is-gone {
+  opacity: 0;
+  transform: translate(44px, 4px) scale(.62);
+  transition: transform .75s cubic-bezier(.5, 0, .25, 1), opacity .5s ease .16s;
+}
+
+/* Both captions occupy the same box and crossfade, so the panel never
+   reflows and the form beside it never shifts. The min-height is the taller
+   of the two lines — leave it alone and a three-line statement will push the
+   mark upward every time it appears. */
+.al-caption {
+  position: relative;
+  min-height: clamp(130px, 13vw, 190px);
+}
+.al-line {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity .5s ease, transform .6s var(--al-ease);
+}
+.al-line.is-on {
+  opacity: 1;
+  transform: none;
+}
+.al-line h2 {
+  margin: 0;
+  font-size: clamp(30px, 3.4vw, 48px);
+  line-height: 1.16;
+  font-weight: 600;
+  letter-spacing: -.025em;
+  color: #fff;
+}
+.al-line p {
+  margin: 20px 0 0;
+  max-width: 36ch;
+  font-size: clamp(15px, 1.15vw, 18px);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, .52);
+}
+
+/* Someone who has asked their machine to stop animating things gets the mark
+   and the first line, and nothing moves at all. */
+@media (prefers-reduced-motion: reduce) {
+  .al-bar, .al-chip, .al-line { transition: none; }
+}

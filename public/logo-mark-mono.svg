@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48"
+     role="img" aria-label="DevTrack">
+  <title>DevTrack</title>
+  <!-- Single colour. The growth reads from the lengths alone, which is why
+       this mark survives losing its accent. -->
+  <path d="M9 8 L25 13.1" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+  <path d="M9 19 L32 26.4" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+  <path d="M9 30 L39 39.6" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+</svg>

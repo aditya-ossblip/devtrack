@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48"
+     role="img" aria-label="DevTrack">
+  <title>DevTrack</title>
+  <!-- Velocity: three strokes at one angle, each longer than the last, the
+       newest in lime. Sprint over sprint, the team delivers more. Increasing
+       LENGTH is the whole idea — parallel strokes of equal length are just a
+       hamburger menu. Structure inherits `color`, so one file works on black
+       and on white. -->
+  <path d="M9 8 L25 13.1" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+  <path d="M9 19 L32 26.4" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+  <path d="M9 30 L39 39.6" fill="none" stroke="#A3E635" stroke-width="5" stroke-linecap="round"/>
+</svg>

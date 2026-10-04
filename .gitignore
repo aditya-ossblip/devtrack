@@ -1,0 +1,17 @@
+node_modules
+dist
+.env
+.DS_Store
+.env.local
+*.local
+.vite
+npm-debug.log*
+
+# Backend
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+backend/instance/
+backend/.env
+*.db

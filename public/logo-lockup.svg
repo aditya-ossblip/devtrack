@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 212 48" width="212" height="48"
+     role="img" aria-label="DevTrack">
+  <title>DevTrack</title>
+  <!-- The wordmark is live text so it stays editable. Outline it before
+       sending this to print: a press will not have IBM Plex. -->
+  <path d="M9 8 L25 13.1" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+  <path d="M9 19 L32 26.4" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+  <path d="M9 30 L39 39.6" fill="none" stroke="#A3E635" stroke-width="5" stroke-linecap="round"/>
+  <text x="52" y="32.5"
+        font-family="'IBM Plex Sans','Segoe UI',system-ui,sans-serif"
+        font-size="27" font-weight="600" letter-spacing="-0.7"
+        fill="currentColor">DevTrack</text>
+</svg>

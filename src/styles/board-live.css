@@ -1,0 +1,272 @@
+/* The Focus + Live board.
+ *
+ * Its own sheet rather than more of app.css: everything here belongs to the
+ * board's two new pieces, and keeping them apart means a stale copy of the
+ * big shared sheet cannot quietly undo them.
+ */
+
+/* ---- layout: the board, with the panel docked to the window's right edge ---- */
+.board-shell {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
+.board-shell > .app-content { min-width: 0; }
+
+/* Columns were a fixed 300px. With the panel beside them that pushed Done off
+   the edge, so they now share the width - and only scroll sideways once each
+   would be narrower than 220px. */
+.board-shell .board .column { flex: 1 1 0; width: auto; min-width: 220px; }
+.board-shell .issue-key { white-space: nowrap; } /* "DEV-12" should never break across lines */
+
+/* ---- your three for today ---- */
+.focus-strip {
+  margin-bottom: var(--space-6);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, var(--accent-soft), var(--bg) 75%);
+}
+.focus-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+.focus-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.focus-hint { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+@media (max-width: 700px) { .focus-hint { flex-basis: 100%; order: 3; margin-left: 0; } }
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.seg button {
+  padding: 5px 11px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--border-strong); }
+.seg button[aria-pressed='true'] { color: var(--text); background: var(--surface-raised); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.focus-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+@media (max-width: 900px) {
+  .focus-cards { grid-template-columns: minmax(0, 1fr); }
+}
+
+.focus-card {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 3px var(--space-3);
+  align-content: start;
+  padding: var(--space-3) var(--space-4);
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+.focus-card:hover { border-color: var(--accent-border); transform: translateY(-1px); }
+.focus-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.focus-card.is-overdue { box-shadow: inset 3px 0 0 var(--danger); }
+
+.focus-num {
+  grid-row: span 3;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1.1;
+  color: var(--accent);
+}
+.focus-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.focus-reason { font-size: 12px; color: var(--text-secondary); }
+.focus-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-top: 6px;
+}
+.focus-state {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+}
+.focus-empty,
+.focus-more {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.focus-more { margin-top: var(--space-3); font-size: 12px; color: var(--text-muted); }
+
+/* ---- the board underneath ---- */
+.issue-card.is-dimmed { opacity: 0.35; }
+.issue-card.is-dimmed:hover,
+.issue-card.is-dimmed:focus-visible { opacity: 1; }
+
+/* A card someone just changed glows for a moment, then settles. */
+.issue-card.is-fresh { animation: card-fresh 2.6s ease-out; }
+@keyframes card-fresh {
+  0%, 30% { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft-strong); opacity: 1; }
+  100% { border-color: var(--border); box-shadow: var(--shadow-xs); }
+}
+
+/* ---- members + activity panel ----
+   Docked like Discord's member list: full height under the top bar, its own
+   darker surface, its own scroll, one column everything lines up in. */
+.live-panel {
+  flex: 0 0 288px;
+  position: sticky;
+  top: var(--topbar-height);
+  height: calc(100vh - var(--topbar-height));
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-3) var(--space-6);
+  background: var(--sidebar-bg);
+  border-left: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+@media (max-width: 1180px) {
+  .board-shell { flex-direction: column; align-items: stretch; }
+  .live-panel {
+    position: static;
+    flex: none;
+    height: auto;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    padding: var(--space-5) var(--space-6) var(--space-8);
+  }
+}
+
+.lp-head { display: flex; justify-content: flex-end; padding: 0 var(--space-1) var(--space-2); }
+.lp-status { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-muted); }
+.lp-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--border-strong); }
+.lp-status.is-live { color: var(--accent); }
+.lp-status.is-live i { background: var(--accent); }
+
+.lp-section + .lp-section { margin-top: var(--space-5); }
+.lp-label {
+  margin: 0 0 var(--space-2);
+  padding: 0 var(--space-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+.lp-note { padding: 0 var(--space-2); font-size: 12.5px; color: var(--text-muted); }
+.lp-note p { margin: 0 0 var(--space-2); }
+
+/* members: one row each, avatar · name · role, all on the same baseline */
+.lp-members { list-style: none; margin: 0; padding: 0; }
+.lp-member {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 5px var(--space-2);
+  border-radius: var(--radius-md);
+}
+.lp-member:hover { background: var(--sidebar-hover); }
+.lp-member-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lp-role { font-size: 11px; color: var(--text-muted); }
+
+/* day dividers: a centred date on a hairline */
+.lp-day-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-4) var(--space-2) var(--space-2);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.lp-day-rule::before,
+.lp-day-rule::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.lp-day:first-of-type .lp-day-rule { margin-top: var(--space-1); }
+
+/* a burst of changes by one person: avatar once, name + time, then one line per change */
+.lp-group {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: 6px var(--space-2);
+  border-radius: var(--radius-md);
+}
+.lp-group:hover { background: var(--sidebar-hover); }
+.lp-group-body { min-width: 0; } /* lets long lines end in … instead of widening the panel */
+.lp-who { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
+.lp-who b {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lp-who time { margin-left: auto; flex: none; font-size: 11px; color: var(--text-muted); }
+
+.lp-acts { list-style: none; margin: 2px 0 0; padding: 0; }
+.lp-act {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lp-act b { color: var(--text); font-weight: 500; }
+.lp-key { font-family: var(--font-mono); font-size: 11.5px; color: var(--text); }
+.lp-act.is-yours { color: var(--text); }
+.lp-tag {
+  margin-left: 6px;
+  padding: 0 5px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .issue-card.is-fresh { animation: none; border-color: var(--accent-border); }
+  .focus-card:hover { transform: none; }
+}
