@@ -1,8 +1,11 @@
 # DevTrack — Phase 2: backend wiring plan
 
-> **Status: implemented.** This document was the plan; the code in `backend/`
-> and `src/` now follows it. Kept as the API reference — if you change an
-> endpoint, change it here too. See SETUP.md to run it.
+> **Status: historical.** This was the Phase 2 plan, and it was implemented.
+> The app has since moved on: tasks became Jira-style issues with workflows,
+> sprints, attachments and analytics, so the tables and endpoints below are out
+> of date. The README's API overview lists the current endpoints; see SETUP.md
+> to run it. The design reasoning here (optimistic moves, the socket as an
+> extra, derived `overdue`) still holds.
 
 Frontend is React 18 + Vite 8 (`devtrack-frontend`). Backend is Flask +
 SQLAlchemy + MySQL, JWT auth, Flask-SocketIO for live updates. This document is

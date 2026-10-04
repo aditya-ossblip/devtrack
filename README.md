@@ -93,7 +93,7 @@ Settings live in `backend/.env`. Copy them from
 | `DATABASE_URL` | SQLite at `backend/instance/devtrack.db` | e.g. `mysql+pymysql://user:pass@localhost:3306/devtrack` |
 | `JWT_EXPIRES_SECONDS` | `86400` | Login lifetime |
 | `CORS_ORIGINS` | `http://localhost:5173` | Only needed when not going through the Vite proxy |
-| `MAX_UPLOAD_BYTES` | 25 MB (`.env.example` sets 8 MB) | Largest attachment |
+| `MAX_UPLOAD_BYTES` | 25 MB if unset; `.env.example` sets 8 MB | Largest attachment |
 | `RESET_TOKEN_TTL_SECONDS` | `3600` | Password reset link lifetime |
 | `RESET_RETURN_TOKEN` | `1` | Return the reset link in the API response (there is no mail server). Set to `0` anywhere real. |
 | `GOOGLE_CLIENT_ID` | empty | Turns on Sign in with Google. Leave it blank and the button is hidden. |

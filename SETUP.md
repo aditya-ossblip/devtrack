@@ -25,16 +25,23 @@ python -c "import secrets; print(secrets.token_hex(32))"
 Leave `DATABASE_URL` blank to start — the app falls back to a SQLite file at
 `backend/instance/devtrack.db`, so you can run everything before MySQL exists.
 
-Load the demo board and start the API:
+Create the schema, add the demo account and start the API:
 
 ```bash
+flask --app run:app db upgrade
 python seed.py
 python run.py
 ```
 
-`seed.py` prints the four accounts it created. They all share the password
-`devtrack123`. Sign in as `aditya@devtrack.local` for the admin view or
-a second account you register to see the developer restrictions.
+The schema comes from the migrations in `migrations/versions/`; `seed.py`
+refuses to run until they have been applied.
+
+`seed.py` creates a single account, `aditya@devtrack.local` with the password
+`devtrack123`, and no project — creating one is the first thing to try. To
+see developer restrictions, register a second account, add it to your project
+as a developer and sign in as it. `python seed.py --email you@gmail.com` moves
+the demo account onto your Google address, and `--reset` empties every table
+first.
 
 Check it is up: <http://localhost:5000/api/health> should return
 `{"status":"ok"}`.
@@ -85,17 +92,19 @@ Then in `backend/.env`:
 DATABASE_URL=mysql+pymysql://devtrack:your-password@localhost:3306/devtrack
 ```
 
-Set up migrations once, so schema changes stop being manual:
+Build the schema in MySQL from the existing migrations and add the demo
+account:
 
 ```bash
 cd backend
-flask --app run:app db init
-flask --app run:app db migrate -m "initial schema"
 flask --app run:app db upgrade
 python seed.py
 ```
 
-From then on, any model change is `db migrate` + `db upgrade`.
+The migrations folder is already in the repo, so do not run `db init`. After a
+model change, run `db migrate -m "what changed"` and then `db upgrade` (or
+`npm run db:migrate` / `npm run db:upgrade` from the root), and commit the new
+file in `migrations/versions/`.
 
 ## 4. Tests
 
@@ -105,13 +114,13 @@ pytest
 ```
 
 The suite runs against in-memory SQLite and needs no server running. It covers
-login and JWT handling, the board response shape, task moves and ordering, the
-derived `overdue` flag, and every row of the permission table.
+login, JWT and password reset, the board response shape, issue moves and
+workflow transitions, sprints, attachments, pagination, the live activity feed,
+the derived `overdue` flag, and every row of the permission table.
 
 ## Troubleshooting
 
-**"Cannot reach the server. Is the backend running?"** — the banner on the
-dashboard means Vite could not proxy to :5000. Start the backend first.
+**"Cannot reach the server. Is the backend running?"** — this message means Vite could not proxy to :5000. Start the backend first.
 
 **Vite refuses to start** — Vite 8 needs Node 20.19+ or 22.12+. Check with
 `node -v`.
