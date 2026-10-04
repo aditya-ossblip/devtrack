@@ -23,6 +23,7 @@ export default function SignInPanel({ mode = 'signin', onDone }) {
   const { login, loginWithGoogle, isChecking } = useAuth()
 
   const [status, setStatus] = useState('loading')
+  const [statusDetail, setStatusDetail] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [email, setEmail] = useState('')
@@ -75,7 +76,10 @@ export default function SignInPanel({ mode = 'signin', onDone }) {
 
       <GoogleButton
         onCredential={handleGoogle}
-        onStatus={setStatus}
+        onStatus={(next, detail) => {
+          setStatus(next)
+          setStatusDetail(detail)
+        }}
         text={signingUp ? 'signup_with' : 'continue_with'}
       />
 
@@ -92,6 +96,15 @@ export default function SignInPanel({ mode = 'signin', onDone }) {
               <>
                 {' '}Running locally? Start the API with <code>npm run api</code>{' '}
                 in the left terminal.
+                {/* Something answered, but it was not Flask: another
+                    program holds the port the dev proxy points at. */}
+                {statusDetail && statusDetail !== 502 && statusDetail !== 504 && (
+                  <>
+                    {' '}The API address answered with HTTP {statusDetail}, so
+                    another program may be using its port — see
+                    {' '}<code>vite.config.js</code>.
+                  </>
+                )}
               </>
             )}
           </p>

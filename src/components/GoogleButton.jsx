@@ -53,8 +53,11 @@ export default function GoogleButton({ onCredential, onStatus, text = 'continue_
 
   useEffect(() => {
     let cancelled = false
-    const report = (status) => {
-      if (!cancelled) handlers.current.onStatus?.(status)
+    // `detail` is the HTTP status when something answered but it was not our
+    // API (e.g. 403 from another program on the port), or null when nothing
+    // answered at all.
+    const report = (status, detail = null) => {
+      if (!cancelled) handlers.current.onStatus?.(status, detail)
     }
 
     async function start() {
@@ -62,8 +65,8 @@ export default function GoogleButton({ onCredential, onStatus, text = 'continue_
       try {
         const { data } = await api.get('/auth/config')
         clientId = data.googleClientId || ''
-      } catch {
-        report('server-down')
+      } catch (err) {
+        report('server-down', err?.response?.status ?? null)
         return
       }
       if (cancelled) return

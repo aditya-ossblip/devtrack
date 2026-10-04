@@ -27,8 +27,20 @@ if __name__ == '__main__':
     socketio.run(
         app,
         host=os.getenv('HOST', '127.0.0.1'),
-        port=int(os.getenv('PORT', '5000')),
+        # Not 5000: macOS's AirPlay Receiver holds that port. vite.config.js
+        # proxies to 5001 — change both together, or set PORT and
+        # VITE_API_TARGET.
+        port=int(os.getenv('PORT', '5001')),
         debug=debug,
         use_reloader=use_reloader,
+        # Werkzeug's in-browser debugger wraps the whole server, Socket.IO
+        # included. When a live connection closes, the WebSocket layer ends it
+        # by raising ConnectionError on purpose; the debugger mistakes that for
+        # a crash, logs a 500 with a traceback and writes an error page down
+        # the already-closed socket (which is what makes Vite print
+        # "ws proxy error: write ECONNABORTED"). This is a JSON API behind a
+        # proxy, so the debugger page was never reachable anyway; real errors
+        # still print their traceback in this terminal.
+        use_debugger=False,
         allow_unsafe_werkzeug=True,  # dev server only
     )

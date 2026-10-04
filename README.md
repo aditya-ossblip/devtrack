@@ -44,20 +44,20 @@ Socket.IO.
 | Database | SQLite by default; MySQL via PyMySQL |
 | Tests | pytest, against in-memory SQLite |
 
-## Quick start (Windows)
+## Quick start (Windows, macOS, Linux)
 
 You need Node 20.19+ or 22.12+ and Python 3.10+.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\setup.ps1   # installs everything, writes backend\.env
-npm run db:upgrade                                     # create the schema
-npm run seed                                           # create the demo account
+```bash
+npm run setup     # installs everything, writes backend/.env, builds the database, creates the demo account
 ```
+
+It is safe to run again; each step skips what is already done.
 
 Then run each of these in its own terminal:
 
-```powershell
-npm run api    # Flask + Socket.IO on http://localhost:5000
+```bash
+npm run api    # Flask + Socket.IO on http://127.0.0.1:5001
 npm run dev    # Vite on http://localhost:5173
 ```
 
@@ -73,14 +73,16 @@ For manual setup, macOS/Linux and MySQL, see [SETUP.md](SETUP.md).
 
 | Script | Does |
 | --- | --- |
+| `setup` | One-time install: packages, virtualenv, `.env`, database, demo account |
 | `dev` / `build` / `preview` | Vite dev server, production build, preview the build |
 | `api` | Start the backend (`backend/run.py`) |
 | `test` | Run the pytest suite |
 | `seed` | Create the demo account |
 | `db:upgrade` / `db:migrate` / `db:downgrade` / `db:history` | Flask-Migrate commands |
 
-The backend scripts call `backend\.venv\Scripts\python.exe` directly, so they
-are Windows-only as written.
+The backend scripts go through `scripts/backend.mjs`, which finds the
+virtualenv's Python on Windows (`.venv\Scripts\python.exe`) or macOS/Linux
+(`.venv/bin/python`), so the same commands work on every system.
 
 ## Configuration
 

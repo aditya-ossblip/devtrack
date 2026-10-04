@@ -25,7 +25,11 @@ function run(handler) {
 export function connectSocket(token) {
   if (socket) return socket
 
-  socket = io({ auth: { token }, autoConnect: true, transports: ['websocket', 'polling'] })
+  // Default transports: start on HTTP long-polling, then upgrade to a
+  // WebSocket when the server and any proxy in between allow it. Forcing
+  // 'websocket' first meant one failed upgrade left the board with no live
+  // connection at all, because the client does not fall back by itself.
+  socket = io({ auth: { token }, autoConnect: true })
 
   socket.on('connect', () => {
     setSocketId(socket.id)

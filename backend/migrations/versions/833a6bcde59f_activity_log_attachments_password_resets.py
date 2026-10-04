@@ -1,7 +1,7 @@
 """activity log, attachments, password resets
 
 Revision ID: 833a6bcde59f
-Revises: 
+Revises: 4d1e0b7f2a90
 Create Date: 2026-09-16 19:54:28.604956
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '833a6bcde59f'
-down_revision = None
+down_revision = '4d1e0b7f2a90'
 branch_labels = None
 depends_on = None
 
@@ -73,11 +73,14 @@ def upgrade():
     with op.batch_alter_table('attachments', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_attachments_issue_id'), ['issue_id'], unique=False)
 
-    with op.batch_alter_table('tasks', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_tasks_project_id'))
-        batch_op.drop_index(batch_op.f('ix_tasks_status'))
+    # The old pre-issues `tasks` table only exists in databases made before
+    # this revision; a new database built from 4d1e0b7f2a90 never had it.
+    if sa.inspect(op.get_bind()).has_table('tasks'):
+        with op.batch_alter_table('tasks', schema=None) as batch_op:
+            batch_op.drop_index(batch_op.f('ix_tasks_project_id'))
+            batch_op.drop_index(batch_op.f('ix_tasks_status'))
 
-    op.drop_table('tasks')
+        op.drop_table('tasks')
     # ### end Alembic commands ###
 
 

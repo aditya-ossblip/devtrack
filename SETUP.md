@@ -1,6 +1,9 @@
 # Running DevTrack
 
-Two processes: the Flask API on :5000 and the Vite dev server on :5173. Vite
+**Shortcut:** `npm run setup` from the project root does all of section 1 and
+`npm install` in one go, on any OS. The manual steps are below.
+
+Two processes: the Flask API on :5001 and the Vite dev server on :5173. Vite
 proxies `/api` and `/socket.io` through to Flask, so the browser only ever
 talks to one origin and there is no CORS setup to get wrong.
 
@@ -43,7 +46,7 @@ as a developer and sign in as it. `python seed.py --email you@gmail.com` moves
 the demo account onto your Google address, and `--reset` empties every table
 first.
 
-Check it is up: <http://localhost:5000/api/health> should return
+Check it is up: <http://127.0.0.1:5001/api/health> should return
 `{"status":"ok"}`.
 
 ## 2. Frontend
@@ -62,16 +65,17 @@ npm run dev
 Open the `Devtrack` folder in the editor, then open a terminal (`Ctrl` + `` ` ``)
 and split it so you have two panes. From the project root, no `cd` needed:
 
-```powershell
+```bash
 # pane 1 — the API
-.\backend\.venv\Scripts\python.exe backend\run.py
+npm run api
 
 # pane 2 — the frontend
 npm run dev
 ```
 
-Calling the virtualenv's `python.exe` by path avoids activating it, which
-sidesteps PowerShell's execution-policy block on `Activate.ps1` entirely.
+`npm run api` calls the virtualenv's Python by path (`.venv\Scripts\python.exe`
+on Windows, `.venv/bin/python` on macOS/Linux), so nothing needs activating —
+which also sidesteps PowerShell's execution-policy block on `Activate.ps1`.
 
 To get the editor to pick the right interpreter for IntelliSense and debugging:
 `Ctrl+Shift+P` → **Python: Select Interpreter** → choose the one under
@@ -120,7 +124,15 @@ the derived `overdue` flag, and every row of the permission table.
 
 ## Troubleshooting
 
-**"Cannot reach the server. Is the backend running?"** — this message means Vite could not proxy to :5000. Start the backend first.
+**"Cannot reach the server. Is the backend running?"** — this message means Vite could not proxy to :5001. Start the backend first.
+
+**macOS: the login page says it can't reach the server while the backend is
+running** — something else is answering on the API's port. The usual one is
+AirPlay Receiver, which holds port 5000 on macOS 12+ and replies 403 to
+everything; that is why DevTrack uses 5001. Check with
+`lsof -nP -iTCP:5001 -sTCP:LISTEN` — the only listener should be Python. If
+5001 is taken too, start the API with `PORT=5002 npm run api` and Vite with
+`VITE_API_TARGET=http://127.0.0.1:5002 npm run dev`.
 
 **Vite refuses to start** — Vite 8 needs Node 20.19+ or 22.12+. Check with
 `node -v`.
