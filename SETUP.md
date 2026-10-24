@@ -134,6 +134,15 @@ everything; that is why DevTrack uses 5001. Check with
 5001 is taken too, start the API with `PORT=5002 npm run api` and Vite with
 `VITE_API_TARGET=http://127.0.0.1:5002 npm run dev`.
 
+**Windows: `npm : File ...\npm.ps1 cannot be loaded because running scripts is
+disabled on this system`** — PowerShell on a fresh Windows install blocks npm's
+PowerShell wrapper. `npm run api` and `npm run dev` work in **Command Prompt**,
+which is why the project's `.vscode/settings.json` makes VS Code open Command
+Prompt terminals on Windows. In PowerShell, either type `npm.cmd run api` /
+`npm.cmd run dev`, or allow scripts for your own account once with
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. macOS and Linux are
+unaffected.
+
 **Vite refuses to start** — Vite 8 needs Node 20.19+ or 22.12+. Check with
 `node -v`.
 

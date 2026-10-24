@@ -11,6 +11,7 @@ npm-debug.log*
 __pycache__/
 *.py[cod]
 .venv/
+.venv-*/
 venv/
 backend/instance/
 backend/.env

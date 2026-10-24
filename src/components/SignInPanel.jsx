@@ -20,12 +20,13 @@ import { useAuth } from '../state/AuthContext.jsx'
  * set up.
  */
 export default function SignInPanel({ mode = 'signin', onDone }) {
-  const { login, loginWithGoogle, isChecking } = useAuth()
+  const { login, register, loginWithGoogle, isChecking } = useAuth()
 
   const [status, setStatus] = useState('loading')
   const [statusDetail, setStatusDetail] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -45,12 +46,25 @@ export default function SignInPanel({ mode = 'signin', onDone }) {
   async function handlePassword(e) {
     e.preventDefault()
     setError('')
+    // On the sign-up page this form creates the account. It used to sign in
+    // here too, so without Google nobody could register at all — every new
+    // address was rejected as a wrong password.
+    if (signingUp && !name.trim()) {
+      setError('Enter your name.')
+      return
+    }
     if (!email || !password) {
       setError('Enter your email and password.')
       return
     }
+    if (signingUp && password.length < 8) {
+      setError('Use a password of at least 8 characters.')
+      return
+    }
     setBusy(true)
-    const result = await login(email, password)
+    const result = signingUp
+      ? await register({ name: name.trim(), email, password })
+      : await login(email, password)
     setBusy(false)
     if (result.ok) onDone()
     else setError(result.error)
@@ -125,19 +139,35 @@ export default function SignInPanel({ mode = 'signin', onDone }) {
               <>
                 <b>Google sign-in is not set up on this server yet.</b> Add a
                 client ID to <code>backend/.env</code> as{' '}
-                <code>GOOGLE_CLIENT_ID</code> and restart the API. Until then,
-                sign in with a password.
+                <code>GOOGLE_CLIENT_ID</code> and restart the API. Until then,{' '}
+                {signingUp ? 'create an account with a password.' : 'sign in with a password.'}
               </>
             ) : (
               <>
                 <b>Google could not be reached.</b> You are offline, or a
-                blocker is stopping their script. Sign in with a password
-                instead.
+                blocker is stopping their script.{' '}
+                {signingUp ? 'Create an account with a password instead.' : 'Sign in with a password instead.'}
               </>
             )}
           </p>
 
           <form onSubmit={handlePassword}>
+            {signingUp && (
+              <div className="field">
+                <label className="field-label" htmlFor="name">
+                  Name
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  className="input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  disabled={busy || isChecking}
+                />
+              </div>
+            )}
             <div className="field">
               <label className="field-label" htmlFor="email">
                 Email
@@ -162,16 +192,19 @@ export default function SignInPanel({ mode = 'signin', onDone }) {
                 className="input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
+                autoComplete={signingUp ? 'new-password' : 'current-password'}
                 disabled={busy || isChecking}
               />
+              {signingUp && <p className="field-hint">At least 8 characters.</p>}
             </div>
             <button
               className="btn btn-primary auth-submit"
               type="submit"
               disabled={busy || isChecking}
             >
-              {busy ? 'Signing in…' : 'Sign in'}
+              {busy
+                ? signingUp ? 'Creating your account…' : 'Signing in…'
+                : signingUp ? 'Create account' : 'Sign in'}
             </button>
           </form>
         </div>
