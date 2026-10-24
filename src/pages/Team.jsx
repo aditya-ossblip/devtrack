@@ -23,8 +23,12 @@ export default function Team() {
 
   if (projectStatus === 'empty') return <ProjectEmpty />
 
+  // Your role on *this* project decides what you can do here. The account-wide
+  // `user.role` grants nothing (see auth.project_role on the server), so it must
+  // not unlock the controls either.
   const isLead = project?.leadId === user?.id
-  const canManage = isLead || user?.role === 'admin' || user?.role === 'manager'
+  const myRole = (members.find((m) => m.id === user?.id)?.projectRole ?? '').toLowerCase()
+  const canManage = isLead || myRole === 'admin' || myRole === 'manager'
 
   return (
     <>

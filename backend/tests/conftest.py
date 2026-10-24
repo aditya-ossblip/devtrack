@@ -12,8 +12,11 @@ from app.models import Issue, Project, ProjectMember, Sprint, User  # noqa: E402
 
 
 @pytest.fixture()
-def app():
+def app(tmp_path):
     application = create_app(TestConfig)
+    # Each test uploads into its own temporary folder, which pytest removes, so
+    # test runs no longer pile files up in backend/instance/test-uploads.
+    application.config['UPLOAD_DIR'] = tmp_path / 'uploads'
     with application.app_context():
         db.create_all()
         yield application

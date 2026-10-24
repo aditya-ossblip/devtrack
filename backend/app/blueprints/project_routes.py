@@ -189,7 +189,8 @@ def list_members(project_id: int):
 @bp.post('/<int:project_id>/members')
 @token_required
 def add_member(project_id: int):
-    """Add someone by id, or by email if they are not registered yet."""
+    """Add a registered user by id or exact email. Unknown emails get a 404:
+    people sign up first, then a manager or admin adds them here."""
     project = require_project(project_id, minimum='manager')
     actor = current_user()
     data = request.get_json(silent=True) or {}

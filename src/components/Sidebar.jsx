@@ -92,7 +92,7 @@ export default function Sidebar() {
         <div className="avatar">{user?.initials ?? '··'}</div>
         <div className="sidebar-footer-text">
           <div className="sidebar-footer-name">{user?.name ?? 'Signed out'}</div>
-          <div className="sidebar-footer-role">{user?.role ?? ''}</div>
+          <div className="sidebar-footer-role">{user?.title || user?.email || ''}</div>
         </div>
         <button type="button" className="sidebar-signout" onClick={logout}>
           Sign out
