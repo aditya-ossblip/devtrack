@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 
-import { api } from '../api/client.js'
+import { getAuthConfig } from '../state/authConfig.js'
 
 const GSI_SRC = 'https://accounts.google.com/gsi/client'
 
@@ -63,8 +63,7 @@ export default function GoogleButton({ onCredential, onStatus, text = 'continue_
     async function start() {
       let clientId = ''
       try {
-        const { data } = await api.get('/auth/config')
-        clientId = data.googleClientId || ''
+        clientId = (await getAuthConfig()).googleClientId
       } catch (err) {
         report('server-down', err?.response?.status ?? null)
         return

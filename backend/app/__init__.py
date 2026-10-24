@@ -10,6 +10,7 @@ from .extensions import cors, db, migrate, socketio
 def create_app(config_object=Config) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_object)
+    _refuse_unsafe_production(app)
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -21,7 +22,9 @@ def create_app(config_object=Config) -> Flask:
     socketio.init_app(app, cors_allowed_origins=app.config['CORS_ORIGINS'] or '*')
 
     # Imported for their side effects: model registration and socket handlers.
-    from . import events, models  # noqa: F401
+    from . import events, lengths, models  # noqa: F401
+
+    lengths.install()
     from .blueprints import register_blueprints
 
     events.init_socket_handlers(socketio)
@@ -43,6 +46,32 @@ def create_app(config_object=Config) -> Flask:
 
     return app
 
+
+
+def _refuse_unsafe_production(app) -> None:
+    """Stop at startup rather than run a live site on development settings.
+
+    Each of these is easy to forget when moving to a host, and each one fails
+    quietly: a guessable signing key lets anyone forge a login, and a SQLite
+    file on most hosts is wiped on every deploy, taking everyone's work with it.
+    """
+    if not app.config.get('IS_PRODUCTION'):
+        return
+
+    problems = []
+    key = app.config.get('SECRET_KEY') or ''
+    if key in ('dev-only-not-for-deployment', 'change-me-before-anyone-else-runs-this') or len(key) < 32:
+        problems.append('SECRET_KEY must be set to a long random value (64 hex characters).')
+    if str(app.config.get('SQLALCHEMY_DATABASE_URI', '')).startswith('sqlite'):
+        problems.append('DATABASE_URL must point at Postgres; SQLite is for local development only.')
+    if not app.config.get('GOOGLE_CLIENT_ID') and not app.config.get('PASSWORD_SIGN_IN'):
+        problems.append('GOOGLE_CLIENT_ID is empty, so nobody would be able to sign in.')
+
+    if problems:
+        raise RuntimeError(
+            'DEVTRACK_ENV=production, but the settings are not safe to go live with:\n  - '
+            + '\n  - '.join(problems)
+        )
 
 
 def _warn_if_schema_is_behind(app) -> None:

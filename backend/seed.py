@@ -145,6 +145,11 @@ def seed(email: str = DEMO_EMAIL) -> None:
 
 if __name__ == '__main__':
     app = create_app()
+    if app.config.get('IS_PRODUCTION'):
+        # The demo account has a published password. On the live site everyone,
+        # you included, signs in with Google and the account is made then.
+        print('Not seeding: DEVTRACK_ENV=production. Sign in with Google instead.')
+        sys.exit(1)
     with app.app_context():
         require_schema()
         if '--reset' in sys.argv:

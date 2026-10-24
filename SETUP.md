@@ -26,7 +26,8 @@ python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 Leave `DATABASE_URL` blank to start — the app falls back to a SQLite file at
-`backend/instance/devtrack.db`, so you can run everything before MySQL exists.
+`backend/instance/devtrack.db`, so you can run everything before Postgres is
+installed. Section 3 moves you onto Postgres.
 
 Create the schema, add the demo account and start the API:
 
@@ -82,42 +83,88 @@ To get the editor to pick the right interpreter for IntelliSense and debugging:
 `backend\.venv\Scripts\python.exe`. After that, any new terminal activates the
 venv on its own and plain `python run.py` works from `backend/`.
 
-## 3. Switching to MySQL
+## 3. Postgres
+
+DevTrack runs on Postgres, on your computer and on the live site. SQLite is
+only the fallback that lets a fresh clone start before Postgres is installed.
+
+### Install it
+
+**Windows** (Command Prompt):
+
+```
+winget install -e --id PostgreSQL.PostgreSQL.17
+```
+
+The installer asks for a password for the `postgres` superuser. Keep it; you
+need it once, below. Then open a **new** Command Prompt so `psql` is on PATH
+(or use `"C:\Program Files\PostgreSQL\17\bin\psql.exe"`).
+
+**macOS** (Terminal, with Homebrew):
+
+```
+brew install postgresql@17
+brew services start postgresql@17
+echo 'export PATH="$(brew --prefix postgresql@17)/bin:$PATH"' >> ~/.zprofile
+```
+
+Open a new Terminal window afterwards.
+
+### Create DevTrack's user and databases
+
+Windows: `psql -U postgres` (enter the superuser password).
+macOS: `psql postgres` (Homebrew makes you the superuser, no password).
 
 ```sql
-CREATE DATABASE devtrack CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'devtrack'@'localhost' IDENTIFIED BY 'your-password';
-GRANT ALL PRIVILEGES ON devtrack.* TO 'devtrack'@'localhost';
+CREATE ROLE devtrack LOGIN PASSWORD 'pick-a-password';
+CREATE DATABASE devtrack OWNER devtrack;
+CREATE DATABASE devtrack_test OWNER devtrack;
+\q
 ```
 
 Then in `backend/.env`:
 
 ```
-DATABASE_URL=mysql+pymysql://devtrack:your-password@localhost:3306/devtrack
+DATABASE_URL=postgresql://devtrack:pick-a-password@localhost:5432/devtrack
+TEST_DATABASE_URL=postgresql://devtrack:pick-a-password@localhost:5432/devtrack_test
 ```
 
-Build the schema in MySQL from the existing migrations and add the demo
-account:
+### Build the schema, and bring your old data across
 
-```bash
-cd backend
-flask --app run:app db upgrade
-python seed.py
+```
+npm run db:upgrade
+npm run db:copy-sqlite
 ```
 
-The migrations folder is already in the repo, so do not run `db init`. After a
-model change, run `db migrate -m "what changed"` and then `db upgrade` (or
-`npm run db:migrate` / `npm run db:upgrade` from the root), and commit the new
-file in `migrations/versions/`.
+`db:copy-sqlite` copies everything from `backend/instance/devtrack.db` into the
+empty Postgres database in one go and leaves the SQLite file untouched as a
+backup. Skip it on a fresh install; run `npm run seed` instead for the demo
+account. Restart `npm run api` and you are on Postgres.
+
+The migrations folder is already in the repo, so never run `db init`. After a
+model change: `npm run db:migrate -- -m "what changed"`, then
+`npm run db:upgrade`, and commit the new file in `migrations/versions/`.
+
+### On the live site
+
+Hosts (Render, Railway, Neon, Supabase) give you a URL starting `postgres://`
+or `postgresql://`. Paste it into `DATABASE_URL` as it is; the app adds the
+driver itself. Also set `DEVTRACK_ENV=production`, a fresh `SECRET_KEY` and
+`GOOGLE_CLIENT_ID`. In production the app refuses to start if any of those is
+missing, password sign-in and reset links are off, and Google is the only way
+in.
 
 ## 4. Tests
 
 ```bash
-cd backend
-pytest
+npm test               # in-memory SQLite, nothing to install
+npm run test:postgres  # the same suite on TEST_DATABASE_URL
 ```
 
-The suite runs against in-memory SQLite and needs no server running. It covers
+`npm test` needs no server running. Run `test:postgres` before deploying:
+Postgres enforces column lengths and types that SQLite ignores, so it catches
+problems SQLite lets through. It empties `devtrack_test` as it goes, so never
+point TEST_DATABASE_URL at your real database. It covers
 login, JWT and password reset, the board response shape, issue moves and
 workflow transitions, sprints, attachments, pagination, the live activity feed,
 the derived `overdue` flag, and every row of the permission table.
@@ -166,7 +213,7 @@ tokens no longer validate. Clear site data, or just sign in again.
 of the `dev-only-not-for-deployment` fallback in `config.py`, so seeing that
 number means `.env` was not loaded and every setting fell back to its default
 — including `DATABASE_URL`, which would silently keep you on SQLite after you
-thought you had switched to MySQL. `.env` is now loaded at the top of
+thought you had switched to Postgres. `.env` is now loaded at the top of
 `config.py`, before any setting is read. If it ever comes back, check that
 `backend/.env` exists and that nothing moved the `load_dotenv()` call.
 

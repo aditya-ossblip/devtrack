@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import GoogleButton from './GoogleButton.jsx'
 import { LogoMark } from './Logo.jsx'
 import { useAuth } from '../state/AuthContext.jsx'
+import { getAuthConfig } from '../state/authConfig.js'
 
 /**
  * The whole of sign-in and sign-up.
@@ -29,6 +30,19 @@ export default function SignInPanel({ mode = 'signin', onDone }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  // Whether this server accepts email-and-password accounts at all. Off on
+  // the live site, where Google is the only way in; null until known.
+  const [passwordSignIn, setPasswordSignIn] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getAuthConfig()
+      .then((config) => !cancelled && setPasswordSignIn(config.passwordSignIn))
+      .catch(() => {}) // the Google button reports the server being down
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const signingUp = mode === 'signup'
   const needsFallback = status === 'unconfigured' || status === 'unreachable'
@@ -132,7 +146,33 @@ export default function SignInPanel({ mode = 'signin', onDone }) {
         </div>
       )}
 
-      {needsFallback && (
+      {needsFallback && passwordSignIn === false && (
+        <div className="auth-fallback">
+          <p className="auth-fallback-note">
+            {status === 'unconfigured' ? (
+              <>
+                <b>Sign-in is not available right now.</b> Google sign-in has
+                not been set up on this server yet.
+              </>
+            ) : (
+              <>
+                <b>Google could not be reached.</b> You may be offline, or an
+                ad or tracker blocker is stopping Google&rsquo;s sign-in. Allow
+                it for this site and try again.
+              </>
+            )}
+          </p>
+          <button
+            className="btn btn-primary auth-submit"
+            type="button"
+            onClick={() => window.location.reload()}
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {needsFallback && passwordSignIn && (
         <div className="auth-fallback">
           <p className="auth-fallback-note">
             {status === 'unconfigured' ? (

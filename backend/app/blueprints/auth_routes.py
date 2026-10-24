@@ -1,6 +1,7 @@
 import hashlib
 import secrets
 from datetime import timedelta
+from functools import wraps
 
 from flask import Blueprint, current_app, jsonify, request
 
@@ -21,7 +22,26 @@ def _json() -> dict:
     return data
 
 
+GOOGLE_ONLY = 'This site only signs people in with Google. Use the Google button.'
+
+
+def password_sign_in(view):
+    """Refuse the email-and-password routes when PASSWORD_SIGN_IN is off.
+
+    Checked on the server, not just hidden in the page: a form that is merely
+    not drawn can still be posted to by anyone with curl.
+    """
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        if not current_app.config.get('PASSWORD_SIGN_IN', False):
+            raise ApiError(GOOGLE_ONLY, 403)
+        return view(*args, **kwargs)
+
+    return wrapper
+
+
 @bp.post('/register')
+@password_sign_in
 def register():
     data = _json()
     name = (data.get('name') or '').strip()
@@ -61,7 +81,10 @@ def public_config():
     frontend build means there is one place to configure it — `backend/.env` —
     and a checkout with no Google setup simply renders no Google button.
     """
-    return jsonify(googleClientId=current_app.config.get('GOOGLE_CLIENT_ID', ''))
+    return jsonify(
+        googleClientId=current_app.config.get('GOOGLE_CLIENT_ID', ''),
+        passwordSignIn=bool(current_app.config.get('PASSWORD_SIGN_IN', False)),
+    )
 
 
 @bp.post('/google')
@@ -149,6 +172,7 @@ def sign_in_with_google():
 
 
 @bp.post('/login')
+@password_sign_in
 def login():
     data = _json()
     email = (data.get('email') or '').strip().lower()
@@ -184,6 +208,8 @@ def update_me():
         user.title = (data['title'] or '').strip()
 
     if 'password' in data:
+        if not current_app.config.get('PASSWORD_SIGN_IN', False):
+            raise ApiError(GOOGLE_ONLY, 403)
         # An account created through Google has no password to confirm. It can
         # set one — that is how you stop depending on Google — but only while
         # it genuinely has none; once set, the old one is required as usual.
@@ -213,6 +239,7 @@ def _hash_token(token: str) -> str:
 
 
 @bp.post('/forgot')
+@password_sign_in
 def forgot_password():
     data = _json()
     email = (data.get('email') or '').strip().lower()
@@ -250,6 +277,7 @@ def forgot_password():
 
 
 @bp.post('/reset')
+@password_sign_in
 def reset_password():
     data = _json()
     token = (data.get('token') or '').strip()

@@ -30,7 +30,18 @@ if (!existsSync(python)) {
   process.exit(1)
 }
 
-const child = spawn(python, process.argv.slice(2), { cwd: backend, stdio: 'inherit' })
+// `--test-on-postgres` (npm run test:postgres) points the test suite at
+// TEST_DATABASE_URL from backend/.env instead of in-memory SQLite. It is passed
+// as an environment variable rather than typed before the command, because
+// `NAME=value npm ...` does not work in Command Prompt or PowerShell.
+const args = process.argv.slice(2)
+const env = { ...process.env }
+if (args[0] === '--test-on-postgres') {
+  args.shift()
+  env.DEVTRACK_TEST_ON_POSTGRES = '1'
+}
+
+const child = spawn(python, args, { cwd: backend, stdio: 'inherit', env })
 
 // Ctrl+C reaches the child through the terminal on its own; this just stops
 // Node from exiting first and leaving the server orphaned.

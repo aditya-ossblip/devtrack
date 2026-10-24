@@ -5,7 +5,7 @@ tracker built on React + Vite and a Flask + SQLAlchemy API, with JWT and Google
 sign-in, per-project roles, configurable workflows and live updates over
 Socket.IO.
 
-- **Setup, MySQL and troubleshooting:** [SETUP.md](SETUP.md)
+- **Setup, Postgres and troubleshooting:** [SETUP.md](SETUP.md)
 - **Original API contract and design notes:** [PHASE2.md](PHASE2.md)
 - **How it compares to Jira, feature by feature:** [docs/devtrack-vs-jira.md](docs/devtrack-vs-jira.md)
 
@@ -32,8 +32,8 @@ Socket.IO.
   extension allowlist and a size limit.
 - **Live updates** — board changes, notifications and a project activity feed
   push to everyone viewing the project.
-- **Accounts** — email/password, optional Sign in with Google, and password
-  reset.
+- **Accounts** — Sign in with Google on the live site. Email/password (with
+  reset) is kept for local development and the demo account.
 
 ## Tech stack
 
@@ -41,8 +41,8 @@ Socket.IO.
 | --- | --- |
 | Frontend | React 18, React Router 7, Vite 8, axios, socket.io-client |
 | Backend | Flask 3, Flask-SQLAlchemy / SQLAlchemy 2, Flask-Migrate (Alembic), Flask-SocketIO, PyJWT, google-auth |
-| Database | SQLite by default; MySQL via PyMySQL |
-| Tests | pytest, against in-memory SQLite |
+| Database | Postgres (psycopg 3); SQLite fallback for a first run |
+| Tests | pytest, against in-memory SQLite or Postgres (`npm run test:postgres`) |
 
 ## Quick start (Windows, macOS, Linux)
 
@@ -67,7 +67,7 @@ purpose: creating a project, adding people and shaping the board is the flow
 being tested. `python backend/seed.py --email you@gmail.com` moves the demo
 account to your Google address, so your first Google sign-in lands in it.
 
-For manual setup, macOS/Linux and MySQL, see [SETUP.md](SETUP.md).
+For manual setup, macOS/Linux and Postgres, see [SETUP.md](SETUP.md).
 
 ### npm scripts
 
@@ -91,14 +91,17 @@ Settings live in `backend/.env`. Copy them from
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
+| `DEVTRACK_ENV` | `development` | `production` on the live server: Google-only sign-in, no reset links, refuses to start on unsafe settings |
 | `SECRET_KEY` | insecure dev value | Signs JWTs. Use 32+ random bytes. |
-| `DATABASE_URL` | SQLite at `backend/instance/devtrack.db` | e.g. `mysql+pymysql://user:pass@localhost:3306/devtrack` |
+| `DATABASE_URL` | SQLite at `backend/instance/devtrack.db` | Postgres, e.g. `postgresql://devtrack:pass@localhost:5432/devtrack`. A host's `postgres://` URL works as it is. |
+| `TEST_DATABASE_URL` | unset | A separate Postgres database for `npm run test:postgres` (it gets emptied) |
 | `JWT_EXPIRES_SECONDS` | `86400` | Login lifetime |
 | `CORS_ORIGINS` | `http://localhost:5173` | Only needed when not going through the Vite proxy |
 | `MAX_UPLOAD_BYTES` | 25 MB if unset; `.env.example` sets 8 MB | Largest attachment |
 | `RESET_TOKEN_TTL_SECONDS` | `3600` | Password reset link lifetime |
-| `RESET_RETURN_TOKEN` | `1` | Return the reset link in the API response (there is no mail server). Set to `0` anywhere real. |
-| `GOOGLE_CLIENT_ID` | empty | Turns on Sign in with Google. Leave it blank and the button is hidden. |
+| `RESET_RETURN_TOKEN` | `1` | Return the reset link in the API response (there is no mail server). Always off in production. |
+| `PASSWORD_SIGN_IN` | on in development, off in production | Email-and-password accounts. Refused on the server when off. |
+| `GOOGLE_CLIENT_ID` | empty | Sign in with Google. Required in production, where it is the only way in. |
 
 ## Project layout
 

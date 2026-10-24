@@ -7,6 +7,7 @@ import Modal from '../components/Modal.jsx'
 import ProjectEmpty from '../components/ProjectEmpty.jsx'
 import Topbar from '../components/Topbar.jsx'
 import { useAuth } from '../state/AuthContext.jsx'
+import { getAuthConfig } from '../state/authConfig.js'
 import { useProjects } from '../state/ProjectContext.jsx'
 
 const CATEGORIES = [
@@ -458,6 +459,18 @@ function ProfilePanel({ onSaved, onError }) {
   const [passwords, setPasswords] = useState({ currentPassword: '', password: '', confirm: '' })
   const [passwordError, setPasswordError] = useState('')
   const [busy, setBusy] = useState(false)
+  // On a Google-only server there is no password to change.
+  const [passwordSignIn, setPasswordSignIn] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    getAuthConfig()
+      .then((config) => !cancelled && setPasswordSignIn(config.passwordSignIn))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (user) setProfile({ name: user.name ?? '', title: user.title ?? '' })
@@ -544,66 +557,70 @@ function ProfilePanel({ onSaved, onError }) {
           </button>
         </form>
 
-        <hr className="rule" />
+        {passwordSignIn && (
+          <>
+            <hr className="rule" />
 
-        <form onSubmit={changePassword}>
-          <div className="subsection-title" style={{ marginTop: 0 }}>
-            Change password
-          </div>
-          {passwordError && (
-            <div className="form-error" role="alert">
-              {passwordError}
-            </div>
-          )}
-          <div className="field-row field-row--3">
-            <div className="field">
-              <label className="field-label" htmlFor="me-current">
-                Current password
-              </label>
-              <input
-                id="me-current"
-                type="password"
-                className="input"
-                autoComplete="current-password"
-                value={passwords.currentPassword}
-                onChange={(e) => setPasswords((p) => ({ ...p, currentPassword: e.target.value }))}
-              />
-            </div>
-            <div className="field">
-              <label className="field-label" htmlFor="me-new">
-                New password
-              </label>
-              <input
-                id="me-new"
-                type="password"
-                className="input"
-                autoComplete="new-password"
-                value={passwords.password}
-                onChange={(e) => setPasswords((p) => ({ ...p, password: e.target.value }))}
-              />
-            </div>
-            <div className="field">
-              <label className="field-label" htmlFor="me-confirm">
-                Repeat it
-              </label>
-              <input
-                id="me-confirm"
-                type="password"
-                className="input"
-                autoComplete="new-password"
-                value={passwords.confirm}
-                onChange={(e) => setPasswords((p) => ({ ...p, confirm: e.target.value }))}
-              />
-            </div>
-          </div>
-          <button
-            type="submit"
-            className="btn btn-secondary"
-            disabled={busy || !passwords.currentPassword || !passwords.password}
-          >
-            Change password
-          </button>
-        </form>
+            <form onSubmit={changePassword}>
+              <div className="subsection-title" style={{ marginTop: 0 }}>
+                Change password
+              </div>
+              {passwordError && (
+                <div className="form-error" role="alert">
+                  {passwordError}
+                </div>
+              )}
+              <div className="field-row field-row--3">
+                <div className="field">
+                  <label className="field-label" htmlFor="me-current">
+                    Current password
+                  </label>
+                  <input
+                    id="me-current"
+                    type="password"
+                    className="input"
+                    autoComplete="current-password"
+                    value={passwords.currentPassword}
+                    onChange={(e) => setPasswords((p) => ({ ...p, currentPassword: e.target.value }))}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="me-new">
+                    New password
+                  </label>
+                  <input
+                    id="me-new"
+                    type="password"
+                    className="input"
+                    autoComplete="new-password"
+                    value={passwords.password}
+                    onChange={(e) => setPasswords((p) => ({ ...p, password: e.target.value }))}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label" htmlFor="me-confirm">
+                    Repeat it
+                  </label>
+                  <input
+                    id="me-confirm"
+                    type="password"
+                    className="input"
+                    autoComplete="new-password"
+                    value={passwords.confirm}
+                    onChange={(e) => setPasswords((p) => ({ ...p, confirm: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="btn btn-secondary"
+                disabled={busy || !passwords.currentPassword || !passwords.password}
+              >
+                Change password
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </section>
   )

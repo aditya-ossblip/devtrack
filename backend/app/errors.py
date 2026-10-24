@@ -2,6 +2,8 @@ from flask import jsonify
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from werkzeug.exceptions import HTTPException
 
+from .extensions import db
+
 
 class ApiError(Exception):
     """An error with a message meant for a human to read.
@@ -19,6 +21,10 @@ class ApiError(Exception):
 def register_error_handlers(app):
     @app.errorhandler(ApiError)
     def handle_api_error(error: ApiError):
+        # Whatever the request had half-changed is thrown away, so a refused
+        # edit (say, a title that is too long) cannot be written by the next
+        # thing that happens to flush the session.
+        db.session.rollback()
         return jsonify(error=error.message), error.status
 
     @app.errorhandler(HTTPException)
@@ -42,7 +48,10 @@ def register_error_handlers(app):
         detail = str(getattr(error, 'orig', error))
         app.logger.error('Database schema does not match the models: %s', detail)
 
-        if 'no such column' in detail.lower() or 'unknown column' in detail.lower():
+        lowered = detail.lower()
+        # SQLite, MySQL and Postgres each word it differently.
+        if ('no such column' in lowered or 'unknown column' in lowered
+                or ('column' in lowered and 'does not exist' in lowered)):
             return jsonify(
                 error=(
                     'The database is missing a column the app expects. '

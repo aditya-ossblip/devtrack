@@ -8,7 +8,11 @@ SQLAlchemy>=2.0,<3.0
 PyJWT>=2.8,<3.0
 python-dotenv>=1.0,<2.0
 
-# MySQL driver. Not needed if you stay on the SQLite dev default.
+# Postgres driver (psycopg 3). The binary build bundles libpq, so nothing
+# else has to be installed on Windows, macOS or Linux.
+psycopg[binary]>=3.2,<4.0
+
+# MySQL driver. Only needed if DATABASE_URL points at MySQL.
 PyMySQL>=1.1,<2.0
 
 # Tests
