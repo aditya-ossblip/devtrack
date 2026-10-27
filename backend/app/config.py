@@ -112,7 +112,20 @@ class Config:
     # Uploads live beside the database, outside the source tree, so a deploy
     # never serves them as static files by accident.
     UPLOAD_DIR = INSTANCE_DIR / 'uploads'
-    MAX_UPLOAD_BYTES = int(os.getenv('MAX_UPLOAD_BYTES', str(25 * 1024 * 1024)))
+    MAX_UPLOAD_BYTES = int(os.getenv('MAX_UPLOAD_BYTES', str(10 * 1024 * 1024)))
+    # Total file space per project. Keeps every team inside the free 1 GB of
+    # the live bucket, and turns "the bucket is full" into a clear message
+    # for one project instead of failed uploads for everyone.
+    PROJECT_STORAGE_BYTES = int(os.getenv('PROJECT_STORAGE_BYTES', str(100 * 1024 * 1024)))
+
+    # Where files go: 'local' (UPLOAD_DIR, for your own computer) or 's3' (any
+    # S3-compatible bucket: Supabase Storage on the live site). See storage.py.
+    STORAGE_BACKEND = os.getenv('STORAGE_BACKEND', 'local').strip().lower()
+    S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL', '').strip()
+    S3_REGION = os.getenv('S3_REGION', '').strip()
+    S3_BUCKET = os.getenv('S3_BUCKET', '').strip()
+    S3_ACCESS_KEY_ID = os.getenv('S3_ACCESS_KEY_ID', '').strip()
+    S3_SECRET_ACCESS_KEY = os.getenv('S3_SECRET_ACCESS_KEY', '').strip()
     # Flask's own guard, so an oversized body is refused before it is read
     # into memory rather than after.
     MAX_CONTENT_LENGTH = MAX_UPLOAD_BYTES + (1024 * 1024)
@@ -151,6 +164,8 @@ class TestConfig(Config):
     TESTING = True
     UPLOAD_DIR = INSTANCE_DIR / 'test-uploads'
     MAX_UPLOAD_BYTES = 64 * 1024   # small, so a test can exceed it cheaply
+    PROJECT_STORAGE_BYTES = 160 * 1024
+    STORAGE_BACKEND = 'local'
     MAX_CONTENT_LENGTH = 1024 * 1024
     RESET_RETURN_TOKEN = True
     # In-memory SQLite by default: fast, and nothing to install. `npm run

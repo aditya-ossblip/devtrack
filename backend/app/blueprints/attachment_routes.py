@@ -5,15 +5,19 @@ project, which is what "attach to this task" means — but the project is the
 owner either way, so the Files page can list everything a team has uploaded
 without caring how it got there.
 
-Three rules do most of the safety work here: the stored filename is generated
-rather than taken from the upload, the extension must be on an allowlist, and
-the size is measured from what was actually written rather than from the
-header the client sent.
+Four rules do most of the safety work here: the stored filename is generated
+rather than taken from the upload, the extension must be on an allowlist, the
+size is measured from the bytes actually received rather than from the header
+the client sent, and each project has a storage quota so one team cannot fill
+the shared bucket.
+
+Where the bytes go (a local folder or an S3 bucket such as Supabase) is
+decided in app/storage.py; nothing here knows which.
 """
 
+import io
 import os
 import secrets
-from pathlib import Path
 
 from flask import Blueprint, current_app, jsonify, request, send_file
 
@@ -23,14 +27,24 @@ from ..events import broadcast
 from ..extensions import db
 from ..history import paginate, record
 from ..models import Attachment, Issue
+from ..storage import get_storage
 
 bp = Blueprint('attachments', __name__, url_prefix='/api')
 
+MB = 1024 * 1024
 
-def _upload_dir() -> Path:
-    directory = Path(current_app.config['UPLOAD_DIR'])
-    directory.mkdir(parents=True, exist_ok=True)
-    return directory
+
+def _megabytes(size: int) -> str:
+    value = size / MB
+    return f'{value:.0f} MB' if value >= 10 or value == int(value) else f'{value:.1f} MB'
+
+
+def project_storage_used(project_id: int) -> int:
+    """Bytes of files a project holds, counted from the database rows."""
+    return db.session.scalar(
+        db.select(db.func.coalesce(db.func.sum(Attachment.size), 0))
+        .filter(Attachment.project_id == project_id)
+    ) or 0
 
 
 def _extension(filename: str) -> str:
@@ -46,7 +60,7 @@ def _load_issue(issue_id: int) -> Issue:
 
 
 def _store(upload, *, project_id, issue=None, actor):
-    """Write one uploaded file to disk and record it. Shared by both routes."""
+    """Check one uploaded file, store it and record it. Shared by both routes."""
     original = os.path.basename(upload.filename)[:255]
     extension = _extension(original)
     allowed = current_app.config['ALLOWED_UPLOAD_EXTENSIONS']
@@ -56,22 +70,33 @@ def _store(upload, *, project_id, issue=None, actor):
             f'Accepted: {", ".join(sorted(allowed))}.'
         )
 
-    # The name on disk is ours, never theirs: "../../etc/passwd" and
+    # Read at most one byte past the limit: enough to know it is too big,
+    # without holding a huge upload in memory. Measured from what arrived,
+    # because Content-Length is whatever the client felt like claiming.
+    limit = current_app.config['MAX_UPLOAD_BYTES']
+    data = upload.stream.read(limit + 1)
+    size = len(data)
+    if size > limit:
+        raise ApiError(f'That file is larger than the {_megabytes(limit)} limit.', 413)
+    if size == 0:
+        raise ApiError('That file is empty.')
+
+    quota = current_app.config['PROJECT_STORAGE_BYTES']
+    used = project_storage_used(project_id)
+    if used + size > quota:
+        left = max(quota - used, 0)
+        raise ApiError(
+            f'This project has used {_megabytes(used)} of its {_megabytes(quota)} of file space '
+            f'({_megabytes(left)} left). Delete files you no longer need to make room.',
+            413,
+        )
+
+    # The stored name is ours, never theirs: "../../etc/passwd" and
     # "report.pdf" both end up as a random token with a checked extension.
     stored_name = f'{secrets.token_hex(16)}.{extension}'
-    destination = _upload_dir() / stored_name
-    upload.save(destination)
-
-    size = destination.stat().st_size
-    limit = current_app.config['MAX_UPLOAD_BYTES']
-    if size > limit:
-        # Measured after writing, because Content-Length is whatever the
-        # client felt like claiming.
-        destination.unlink(missing_ok=True)
-        raise ApiError(f'That file is larger than the {limit // (1024 * 1024)}MB limit.', 413)
-    if size == 0:
-        destination.unlink(missing_ok=True)
-        raise ApiError('That file is empty.')
+    content_type = upload.mimetype or 'application/octet-stream'
+    storage = get_storage()
+    storage.save(stored_name, data, content_type)
 
     attachment = Attachment(
         project_id=project_id,
@@ -79,14 +104,20 @@ def _store(upload, *, project_id, issue=None, actor):
         uploader_id=actor.id,
         filename=original,
         stored_name=stored_name,
-        content_type=upload.mimetype or 'application/octet-stream',
+        content_type=content_type,
         size=size,
     )
-    db.session.add(attachment)
-    record('attachment.added', project_id=project_id, actor=actor, issue=issue,
-           field='attachment', after=original,
-           subject=None if issue is not None else original)
-    db.session.commit()
+    try:
+        db.session.add(attachment)
+        record('attachment.added', project_id=project_id, actor=actor, issue=issue,
+               field='attachment', after=original,
+               subject=None if issue is not None else original)
+        db.session.commit()
+    except Exception:
+        # The bytes are stored but the row is not: remove them, or they would
+        # sit in the bucket using space nobody can see or delete.
+        storage.delete(stored_name)
+        raise
 
     broadcast('attachment:added',
               {'projectId': project_id, 'issueId': attachment.issue_id,
@@ -116,7 +147,12 @@ def list_project_files(project_id: int):
     query = query.order_by(Attachment.created_at.desc(), Attachment.id.desc())
 
     files, meta = paginate(query)
-    return jsonify(files=files, meta=meta)
+    usage = {
+        'used': project_storage_used(project.id),
+        'limit': current_app.config['PROJECT_STORAGE_BYTES'],
+        'maxFileSize': current_app.config['MAX_UPLOAD_BYTES'],
+    }
+    return jsonify(files=files, meta=meta, usage=usage)
 
 
 @bp.post('/projects/<int:project_id>/files')
@@ -171,14 +207,14 @@ def download_attachment(attachment_id: int):
         raise ApiError('That file does not exist.', 404)
     require_project(attachment.project_id)
 
-    path = _upload_dir() / attachment.stored_name
-    if not path.exists():
+    data = get_storage().read(attachment.stored_name)
+    if data is None:
         raise ApiError('That file is missing from storage.', 410)
 
     # as_attachment so a stored .svg or .html is downloaded rather than
     # rendered in the origin — an uploaded page must never run as us.
     return send_file(
-        path,
+        io.BytesIO(data),
         mimetype=attachment.content_type,
         as_attachment=True,
         download_name=attachment.filename,
@@ -197,13 +233,21 @@ def delete_attachment(attachment_id: int):
     if attachment.uploader_id != user.id and not can_manage(user, project):
         raise ApiError('You can only remove files you uploaded.', 403)
 
-    (_upload_dir() / attachment.stored_name).unlink(missing_ok=True)
     record('attachment.deleted', project_id=project.id, actor=user,
            issue=attachment.issue, field='attachment', before=attachment.filename,
            subject=None if attachment.issue is not None else attachment.filename)
     issue_id = attachment.issue_id
+    stored_name = attachment.stored_name
     db.session.delete(attachment)
     db.session.commit()
+
+    # After the commit, so a failed delete can never leave a row whose file is
+    # already gone. A leftover object costs a little space; a broken row would
+    # show a file nobody can download.
+    try:
+        get_storage().delete(stored_name)
+    except Exception:
+        current_app.logger.exception('Could not remove %s from storage', stored_name)
 
     broadcast('attachment:deleted',
               {'projectId': project.id, 'issueId': issue_id, 'attachmentId': attachment_id},

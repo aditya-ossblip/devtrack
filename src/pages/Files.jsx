@@ -7,6 +7,13 @@ import Topbar from '../components/Topbar.jsx'
 import { useAuth } from '../state/AuthContext.jsx'
 import { useProjects } from '../state/ProjectContext.jsx'
 
+/** 104857600 -> "100 MB", 5242 -> "0.01 MB" style, kept short for one line. */
+function megabytes(bytes) {
+  const mb = bytes / (1024 * 1024)
+  if (mb >= 10 || Number.isInteger(mb)) return `${Math.round(mb)} MB`
+  return `${mb.toFixed(1)} MB`
+}
+
 /**
  * Every file in the project, in one place.
  *
@@ -24,6 +31,8 @@ export default function Files() {
   // detail endpoint, which is the only thing that knows your role *here*.
   const [role, setRole] = useState('developer')
   const [meta, setMeta] = useState(null)
+  // { used, limit, maxFileSize } in bytes: the project's share of the file space.
+  const [usage, setUsage] = useState(null)
   const [scope, setScope] = useState('all')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -46,6 +55,7 @@ export default function Files() {
       ])
       setFiles(fileRes.data.files)
       setMeta(fileRes.data.meta)
+      setUsage(fileRes.data.usage ?? null)
       setRole(projectRes.data.role)
       setError('')
     } catch (err) {
@@ -77,6 +87,7 @@ export default function Files() {
           // multipart boundary, and naming it here strips that.
           const { data } = await api.post(`/projects/${projectId}/files`, body)
           setFiles((current) => [data.file, ...current])
+          setUsage((u) => (u ? { ...u, used: u.used + data.file.size } : u))
         } catch (err) {
           setError(errorMessage(err, `Could not upload ${file.name}.`))
         } finally {
@@ -92,6 +103,7 @@ export default function Files() {
     try {
       await api.delete(`/attachments/${file.id}`)
       setFiles((current) => current.filter((f) => f.id !== file.id))
+      setUsage((u) => (u ? { ...u, used: Math.max(u.used - file.size, 0) } : u))
     } catch (err) {
       setError(errorMessage(err, 'Could not delete that file.'))
     }
@@ -164,7 +176,16 @@ export default function Files() {
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => inputRef.current?.click()}>
                 Choose files
               </button>
-              <span className="muted"> or drop them here — everyone on the project can download them</span>
+              <span className="muted">
+                {' '}or drop them here — everyone on the project can download them
+                {usage && (
+                  <>
+                    <br />
+                    Up to {megabytes(usage.maxFileSize)} per file · {megabytes(usage.used)} of{' '}
+                    {megabytes(usage.limit)} used
+                  </>
+                )}
+              </span>
             </>
           )}
         </div>

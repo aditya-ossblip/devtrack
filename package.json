@@ -11,6 +11,7 @@
     "test:postgres": "node scripts/backend.mjs --test-on-postgres -m pytest",
     "seed": "node scripts/backend.mjs seed.py",
     "db:copy-sqlite": "node scripts/backend.mjs copy_sqlite_to_postgres.py",
+    "files:copy": "node scripts/backend.mjs copy_uploads.py",
     "db:init": "node scripts/backend.mjs -m flask --app run:app db init",
     "db:migrate": "node scripts/backend.mjs -m flask --app run:app db migrate",
     "db:upgrade": "node scripts/backend.mjs -m flask --app run:app db upgrade",

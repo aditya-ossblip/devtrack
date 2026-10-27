@@ -12,6 +12,10 @@ python-dotenv>=1.0,<2.0
 # else has to be installed on Windows, macOS or Linux.
 psycopg[binary]>=3.2,<4.0
 
+# Uploaded files in an S3-compatible bucket (Supabase Storage, R2, B2...).
+# Only used when STORAGE_BACKEND=s3; local development stores files in a folder.
+boto3>=1.34,<2.0
+
 # MySQL driver. Only needed if DATABASE_URL points at MySQL.
 PyMySQL>=1.1,<2.0
 

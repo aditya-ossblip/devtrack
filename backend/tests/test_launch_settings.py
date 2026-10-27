@@ -105,6 +105,7 @@ def test_production_refuses_to_start_on_development_settings():
     assert 'SECRET_KEY' in message
     assert 'Postgres' in message
     assert 'GOOGLE_CLIENT_ID' in message
+    assert 'STORAGE_BACKEND' in message
 
 
 # --------------------------------------------------------------- Postgres URLs

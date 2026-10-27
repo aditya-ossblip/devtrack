@@ -97,7 +97,9 @@ Settings live in `backend/.env`. Copy them from
 | `TEST_DATABASE_URL` | unset | A separate Postgres database for `npm run test:postgres` (it gets emptied) |
 | `JWT_EXPIRES_SECONDS` | `86400` | Login lifetime |
 | `CORS_ORIGINS` | `http://localhost:5173` | Only needed when not going through the Vite proxy |
-| `MAX_UPLOAD_BYTES` | 25 MB if unset; `.env.example` sets 8 MB | Largest attachment |
+| `MAX_UPLOAD_BYTES` | 10 MB | Largest single file |
+| `PROJECT_STORAGE_BYTES` | 100 MB | Total file space per project |
+| `STORAGE_BACKEND` | `local` | `local` (a folder, for your own computer) or `s3` (Supabase Storage or any S3-compatible bucket; set the `S3_*` settings). Production refuses `local`. |
 | `RESET_TOKEN_TTL_SECONDS` | `3600` | Password reset link lifetime |
 | `RESET_RETURN_TOKEN` | `1` | Return the reset link in the API response (there is no mail server). Always off in production. |
 | `PASSWORD_SIGN_IN` | on in development, off in production | Email-and-password accounts. Refused on the server when off. |

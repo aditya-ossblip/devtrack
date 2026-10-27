@@ -66,6 +66,9 @@ def _refuse_unsafe_production(app) -> None:
         problems.append('DATABASE_URL must point at Postgres; SQLite is for local development only.')
     if not app.config.get('GOOGLE_CLIENT_ID') and not app.config.get('PASSWORD_SIGN_IN'):
         problems.append('GOOGLE_CLIENT_ID is empty, so nobody would be able to sign in.')
+    if app.config.get('STORAGE_BACKEND', 'local') == 'local':
+        problems.append('STORAGE_BACKEND must be "s3": a hosted server\'s own disk is wiped '
+                        'on every restart, taking every uploaded file with it.')
 
     if problems:
         raise RuntimeError(
