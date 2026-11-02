@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # .env is loaded inside config.py, which must happen before its settings are
 # read at import time. Do not move it here.
@@ -11,6 +12,13 @@ def create_app(config_object=Config) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_object)
     _refuse_unsafe_production(app)
+
+    if app.config.get('IS_PRODUCTION'):
+        # Render (like most hosts) puts a proxy in front of the app. Trust its
+        # one X-Forwarded-For / -Proto hop, so request.remote_addr is the
+        # visitor rather than the proxy - the sign-in rate limit counts per
+        # visitor - and URLs are built as https.
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -32,6 +40,18 @@ def create_app(config_object=Config) -> Flask:
     register_blueprints(app)
     register_error_handlers(app)
     _warn_if_schema_is_behind(app)
+
+    @app.after_request
+    def security_headers(response):
+        # The API only ever returns JSON or file downloads, so none of these
+        # can break a page; they stop a browser from second-guessing a file's
+        # type, framing a response, or leaking addresses in the Referer.
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('X-Frame-Options', 'DENY')
+        response.headers.setdefault('Referrer-Policy', 'no-referrer')
+        if app.config.get('IS_PRODUCTION'):
+            response.headers.setdefault('Strict-Transport-Security', 'max-age=31536000')
+        return response
 
     @app.get('/api/health')
     def health():
@@ -66,6 +86,10 @@ def _refuse_unsafe_production(app) -> None:
         problems.append('DATABASE_URL must point at Postgres; SQLite is for local development only.')
     if not app.config.get('GOOGLE_CLIENT_ID') and not app.config.get('PASSWORD_SIGN_IN'):
         problems.append('GOOGLE_CLIENT_ID is empty, so nobody would be able to sign in.')
+    origins = app.config.get('CORS_ORIGINS') or []
+    if not origins or any(not origin.startswith('https://') for origin in origins):
+        problems.append('CORS_ORIGINS must list only the live app address(es), each starting '
+                        'with https:// (e.g. https://devtrack.netlify.app).')
     if app.config.get('STORAGE_BACKEND', 'local') == 'local':
         problems.append('STORAGE_BACKEND must be "s3": a hosted server\'s own disk is wiped '
                         'on every restart, taking every uploaded file with it.')

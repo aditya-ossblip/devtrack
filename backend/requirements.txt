@@ -19,6 +19,10 @@ boto3>=1.34,<2.0
 # MySQL driver. Only needed if DATABASE_URL points at MySQL.
 PyMySQL>=1.1,<2.0
 
+# Production server on Render (Linux). Not installed on Windows, where it
+# cannot run; development there uses `npm run api`.
+gunicorn>=23.0,<24.0; sys_platform != "win32"
+
 # Tests
 pytest>=8.0,<9.0
 

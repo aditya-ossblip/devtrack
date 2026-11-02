@@ -2293,3 +2293,41 @@ input:-webkit-autofill:focus {
   .stat-row { grid-template-columns: 1fr; }
   .bar-row { grid-template-columns: 84px 1fr 36px; }
 }
+
+/* ---- "Waking up the server" (ServerWake.jsx) ---- */
+.server-wake {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+}
+.server-wake h1 {
+  margin: 10px 0 0;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+.server-wake p {
+  margin: 0;
+  max-width: 42ch;
+  opacity: 0.7;
+}
+.server-wake-bar {
+  width: 220px;
+  height: 3px;
+  margin-top: 10px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent) 0 0 / 40% 100% no-repeat,
+    rgba(255, 255, 255, 0.08);
+  animation: server-wake-slide 1.4s ease-in-out infinite;
+}
+@keyframes server-wake-slide {
+  from { background-position: -40% 0, 0 0; }
+  to { background-position: 140% 0, 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .server-wake-bar { animation: none; }
+}

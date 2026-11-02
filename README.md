@@ -206,4 +206,5 @@ activity feed and Socket.IO. No running server is needed.
 
 ## Team
 
-Built and maintained by Aditya Kundu.
+Aditya Kundu — team lead, backend · Ambika Bhakta — frontend and backend ·
+Rittika Barman — database design and backend · Dipsa Dey — UI/UX and frontend

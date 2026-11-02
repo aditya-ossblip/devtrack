@@ -1,6 +1,6 @@
 import re
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 
 from ..auth import current_user, project_role, require_project, token_required
 from ..errors import ApiError
@@ -83,6 +83,19 @@ def create_project():
     name = (data.get('name') or '').strip()
     if not name:
         raise ApiError('Give the project a name.')
+
+    # A cap on projects you lead, so one account cannot create thousands and
+    # fill the free database. Projects you were added to do not count.
+    cap = current_app.config.get('MAX_PROJECTS_PER_USER', 10)
+    leading = db.session.scalar(
+        db.select(db.func.count(Project.id)).filter(Project.lead_id == user.id)
+    )
+    if leading >= cap:
+        raise ApiError(
+            f'You already lead {leading} projects, the most one account can. '
+            'Delete one you no longer need, or ask someone else on the team to create it.',
+            403,
+        )
 
     key = (data.get('key') or '').strip().upper() or _suggest_key(name)
     if not KEY_PATTERN.match(key):

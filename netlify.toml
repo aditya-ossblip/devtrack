@@ -1,0 +1,23 @@
+# Netlify settings for the DevTrack app (the React pages).
+# The API runs on Render; set VITE_API_URL in Netlify's environment variables
+# to its address, e.g. https://devtrack-api.onrender.com
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Vite 8 needs Node 20.19+ or 22.12+.
+  NODE_VERSION = "22"
+
+# Every path (/board, /files...) is the same single-page app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"

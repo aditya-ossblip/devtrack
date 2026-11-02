@@ -19,7 +19,14 @@ export function setToken(token) {
   }
 }
 
-export const api = axios.create({ baseURL: '/api' })
+// Where the API lives. Empty in development: the Vite dev server proxies
+// /api to Flask on this machine, so the browser stays on one address. On the
+// live site the pages (Netlify) and the API (Render) are on different
+// addresses, and VITE_API_URL - set in Netlify's build settings, e.g.
+// https://devtrack-api.onrender.com - points the app at the API.
+export const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+
+export const api = axios.create({ baseURL: `${API_ORIGIN}/api` })
 
 // Set by the socket layer once connected. The backend skips this socket when
 // broadcasting, so whoever made a change doesn't receive their own echo.

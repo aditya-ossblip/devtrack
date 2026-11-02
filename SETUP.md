@@ -154,6 +154,27 @@ driver itself. Also set `DEVTRACK_ENV=production`, a fresh `SECRET_KEY` and
 missing, password sign-in and reset links are off, and Google is the only way
 in.
 
+## Deploying (free plans)
+
+The live site is split in two, each on a free plan with no card:
+
+| Part | Host | Config in this repo |
+| --- | --- | --- |
+| App pages (React) | Netlify | `netlify.toml`: builds `dist/`, sends every path to the app |
+| API + live updates | Render, Singapore | `render.yaml`: `pip install`, then `db upgrade` and gunicorn on every start |
+| Database | Neon (Postgres), Singapore | `DATABASE_URL` in Render |
+| Uploaded files | Supabase Storage (S3), Singapore | `STORAGE_BACKEND=s3` and `S3_*` in Render |
+
+Settings that differ from development:
+
+- **Netlify:** `VITE_API_URL` = the Render address, e.g. `https://devtrack-api.onrender.com`. The app then calls the API and opens live updates there instead of through the Vite proxy.
+- **Render:** `DEVTRACK_ENV=production`, `CORS_ORIGINS` = the Netlify address (`https://...`), plus `DATABASE_URL`, `GOOGLE_CLIENT_ID` and the `S3_*` keys. `render.yaml` lists them all. In production the API refuses to start without a long `SECRET_KEY`, a Postgres database, `s3` storage, a Google client ID and `https` origins.
+- **Google Cloud:** add the Netlify address to the OAuth client's Authorized JavaScript origins.
+
+On the free plan Render sleeps after 15 quiet minutes. The app shows "Waking up the server…" until it answers, which takes up to a minute.
+
+Moving existing data across at launch: point `DATABASE_URL` at Neon and run `npm run db:upgrade` and `npm run db:copy-sqlite` (from SQLite), or use `pg_dump`/`pg_restore` (from local Postgres). Then set the `S3_*` keys and run `npm run files:copy`.
+
 ## 4. Tests
 
 ```bash

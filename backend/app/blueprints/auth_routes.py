@@ -9,6 +9,7 @@ from ..auth import create_token, current_user, token_required
 from ..errors import ApiError
 from ..extensions import db
 from ..models import PasswordReset, User, utcnow
+from ..ratelimit import limited
 
 bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -42,6 +43,7 @@ def password_sign_in(view):
 
 @bp.post('/register')
 @password_sign_in
+@limited('register')
 def register():
     data = _json()
     name = (data.get('name') or '').strip()
@@ -88,6 +90,7 @@ def public_config():
 
 
 @bp.post('/google')
+@limited('google')
 def sign_in_with_google():
     """Trade a Google ID token for a DevTrack one.
 
@@ -173,6 +176,7 @@ def sign_in_with_google():
 
 @bp.post('/login')
 @password_sign_in
+@limited('login')
 def login():
     data = _json()
     email = (data.get('email') or '').strip().lower()
@@ -240,6 +244,7 @@ def _hash_token(token: str) -> str:
 
 @bp.post('/forgot')
 @password_sign_in
+@limited('forgot')
 def forgot_password():
     data = _json()
     email = (data.get('email') or '').strip().lower()
@@ -278,6 +283,7 @@ def forgot_password():
 
 @bp.post('/reset')
 @password_sign_in
+@limited('reset')
 def reset_password():
     data = _json()
     token = (data.get('token') or '').strip()

@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import AppLayout from './components/AppLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
+import ServerWake from './components/ServerWake.jsx'
 import Analytics from './pages/Analytics.jsx'
 import Backlog from './pages/Backlog.jsx'
 import Board from './pages/Board.jsx'
@@ -19,36 +20,40 @@ import { ProjectProvider } from './state/ProjectContext.jsx'
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+      {/* Before anything asks the API who is signed in: on the live site the
+          API may be asleep, and a failed check would sign people out. */}
+      <ServerWake>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          {/* Everything below the layout is signed-in only. Adding a route
-              here inherits the guard rather than re-checking a boolean. */}
-          <Route
-            element={
-              <RequireAuth>
-                <ProjectProvider>
-                  <AppLayout />
-                </ProjectProvider>
-              </RequireAuth>
-            }
-          >
-            <Route path="/" element={<Navigate to="/board" replace />} />
-            <Route path="/board" element={<Board />} />
-            <Route path="/backlog" element={<Backlog />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/my-tasks" element={<MyTasks />} />
-            <Route path="/files" element={<Files />} />
-            <Route path="/team" element={<Team />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
+            {/* Everything below the layout is signed-in only. Adding a route
+                here inherits the guard rather than re-checking a boolean. */}
+            <Route
+              element={
+                <RequireAuth>
+                  <ProjectProvider>
+                    <AppLayout />
+                  </ProjectProvider>
+                </RequireAuth>
+              }
+            >
+              <Route path="/" element={<Navigate to="/board" replace />} />
+              <Route path="/board" element={<Board />} />
+              <Route path="/backlog" element={<Backlog />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/my-tasks" element={<MyTasks />} />
+              <Route path="/files" element={<Files />} />
+              <Route path="/team" element={<Team />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
+      </ServerWake>
     </BrowserRouter>
   )
 }

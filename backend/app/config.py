@@ -153,6 +153,14 @@ class Config:
     # anyone take over any account by typing its email address.
     RESET_RETURN_TOKEN = (not IS_PRODUCTION) and _flag('RESET_RETURN_TOKEN', default=True)
 
+    # Sign-in, sign-up and password-reset attempts per address per window.
+    AUTH_RATE_LIMIT_COUNT = int(os.getenv('AUTH_RATE_LIMIT_COUNT', '10'))
+    AUTH_RATE_LIMIT_WINDOW = int(os.getenv('AUTH_RATE_LIMIT_WINDOW', '600'))
+
+    # Projects one account can lead. Being added to other people's projects
+    # does not count towards it.
+    MAX_PROJECTS_PER_USER = int(os.getenv('MAX_PROJECTS_PER_USER', '10'))
+
     CORS_ORIGINS = [
         origin.strip()
         for origin in os.getenv('CORS_ORIGINS', 'http://localhost:5173').split(',')
@@ -179,6 +187,8 @@ class TestConfig(Config):
         SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
         SQLALCHEMY_ENGINE_OPTIONS = {}
     PASSWORD_SIGN_IN = True
+    # Tests sign in many times from one address; the limit has its own test.
+    AUTH_RATE_LIMIT_COUNT = 10_000
 
     # Fixed, but a real 32-byte key: RFC 7518 wants at least that for HS256,
     # and PyJWT warns on anything shorter. Tests should exercise the same key

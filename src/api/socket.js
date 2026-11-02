@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client'
 
-import { setSocketId } from './client.js'
+import { API_ORIGIN, setSocketId } from './client.js'
 
 let socket = null
 const pendingHandlers = new Set()
@@ -29,7 +29,11 @@ export function connectSocket(token) {
   // WebSocket when the server and any proxy in between allow it. Forcing
   // 'websocket' first meant one failed upgrade left the board with no live
   // connection at all, because the client does not fall back by itself.
-  socket = io({ auth: { token }, autoConnect: true })
+  // Same address as the API: the page's own origin in development (Vite
+  // proxies /socket.io), the Render address on the live site.
+  socket = API_ORIGIN
+    ? io(API_ORIGIN, { auth: { token }, autoConnect: true })
+    : io({ auth: { token }, autoConnect: true })
 
   socket.on('connect', () => {
     setSocketId(socket.id)

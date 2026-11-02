@@ -106,6 +106,36 @@ def test_production_refuses_to_start_on_development_settings():
     assert 'Postgres' in message
     assert 'GOOGLE_CLIENT_ID' in message
     assert 'STORAGE_BACKEND' in message
+    assert 'CORS_ORIGINS' in message
+
+
+class _GoodProduction(TestConfig):
+    IS_PRODUCTION = True
+    SECRET_KEY = 'a' * 64
+    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg://u:p@127.0.0.1:1/devtrack'
+    SQLALCHEMY_ENGINE_OPTIONS = {}
+    GOOGLE_CLIENT_ID = 'x.apps.googleusercontent.com'
+    PASSWORD_SIGN_IN = False
+    STORAGE_BACKEND = 's3'
+    CORS_ORIGINS = ['https://devtrack.netlify.app']
+
+
+def test_production_starts_with_safe_settings_and_trusts_one_proxy(monkeypatch):
+    # The schema check would try to reach the (made-up) production database;
+    # on Windows that connection hangs instead of failing, so skip it here.
+    monkeypatch.setattr('app._warn_if_schema_is_behind', lambda app: None)
+    app = create_app(_GoodProduction)
+    from werkzeug.middleware.proxy_fix import ProxyFix
+
+    # Flask-SocketIO wraps whatever wsgi_app it finds, so the ProxyFix sits
+    # one or more layers in. Walk the chain rather than assume its depth.
+    layer, seen = app.wsgi_app, []
+    for _ in range(6):
+        seen.append(type(layer).__name__)
+        if isinstance(layer, ProxyFix):
+            break
+        layer = getattr(layer, 'wsgi_app', None) or getattr(layer, 'app', None)
+    assert isinstance(layer, ProxyFix), f'no ProxyFix in {seen}'
 
 
 # --------------------------------------------------------------- Postgres URLs
